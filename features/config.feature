@@ -1,4 +1,4 @@
-Feature: Configuration files
+Feature: Configuration Files
   In order to configure my application
   As a developer
   I need to be able to store configuration options in a file
@@ -9,11 +9,11 @@ Feature: Configuration files
     When I load the configuration file
     Then I should get 'UTC' as 'timezone' option
 
-  Scenario: Getting a non-configured option with a default value
+  Scenario: Getting a non-configured option with a default
     Given there is a configuration file
     And the option 'timezone' is not yet configured
     When I load the configuration file
-    Then I should get default value 'CET' as 'timezone' option
+    Then I should get default value 'CET' as 'timezone'
 
   Scenario: Setting a configuration option
     Given there is a configuration file

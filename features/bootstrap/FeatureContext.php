@@ -1,11 +1,16 @@
 <?php
 
 use Behat\Behat\Context\SnippetAcceptingContext;
+use org\bovigo\vfs\vfsStream;
 
 /**
  * Behat context class.
  */
 class FeatureContext implements SnippetAcceptingContext {
+
+	protected $filesystem;
+	protected $config;
+	protected $sut;
 
 	/**
 	 * Initializes context.
@@ -15,6 +20,7 @@ class FeatureContext implements SnippetAcceptingContext {
 	 */
 	public function __construct()
 	{
+		$this->config = [];
 	}
 
 	/**
@@ -22,30 +28,16 @@ class FeatureContext implements SnippetAcceptingContext {
 	 */
 	public function thereIsAConfigurationFile()
 	{
-		if (! file_exists('fixtures/config.php'))
-			throw new Exception("File 'fixtures/config.php' not found");
-
-		$config = include 'fixtures/config.php';
-
-		if (! is_array($config))
-			throw new Exception("File 'fixtures/config.php' should contain an array");
-
+		$this->updateConfig();
 	}
 
 	/**
-	 * @Given the option :option is configured to :value
+	 * @Given the option :arg1 is configured to :arg2
 	 */
-	public function theOptionIsConfiguredTo($option, $value)
+	public function theOptionIsConfiguredTo($arg1, $arg2)
 	{
-		$config = include 'fixtures/config.php';
-
-		if (! is_array($config)) $config = [];
-
-		$config[$option] = $value;
-
-		$content = "<?php\n\nreturn " . var_export($config, true) . ";\n";
-
-		file_put_contents('fixtures/config.php', $content);
+		$this->config[$arg1] = $arg2;
+		$this->updateConfig();
 	}
 
 	/**
@@ -53,7 +45,7 @@ class FeatureContext implements SnippetAcceptingContext {
 	 */
 	public function iLoadTheConfigurationFile()
 	{
-		$this->config = Config::load('fixtures/config.php'); // Taylor!
+		$this->sut = Config::load(vfsStream::url('home/config.php'));
 	}
 
 	/**
@@ -61,45 +53,55 @@ class FeatureContext implements SnippetAcceptingContext {
 	 */
 	public function iShouldGetAsOption($value, $option)
 	{
-		$actual = $this->config->get($option); // Taylor!
+		$actual = $this->sut->get($option);
 
-		if (! strcmp($value, $actual) == 0)
-			throw new Exception("Expected {$actual} to be '{$option}'.");
+		if ($actual !== $value)
+			throw new Exception("Expected {$option} to be '{$value}'!");
 	}
 
 	/**
-	 * @Given the option :option is not yet configured
+	 * @Given the option :arg1 is not yet configured
 	 */
-	public function theOptionIsNotYetConfigured($option)
+	public function theOptionIsNotYetConfigured($arg1)
 	{
-		$config = include 'fixtures/config.php';
-
-		if (! is_array($config)) $config = [];
-
-		unset($config[$option]);
-
-		$content = "<?php\n\nreturn " . var_export($config, true) . ";\n";
-
-		file_put_contents('fixtures/config.php', $content);
+		$this->config = [];
+		$this->updateConfig();
 	}
 
 	/**
-	 * @Then I should get default value :default as :option option
+	 * @Then I should get default value :default as :option
 	 */
-	public function iShouldGetDefaultValueAsOption($default, $option)
+	public function iShouldGetDefaultValueAs($default, $option)
 	{
-		$actual = $this->config->get($option, $default); // Taylor!
+		$actual = $this->sut->get($option, $default);
 
-		if (! strcmp($default, $actual) == 0)
-			throw new Exception("Expected {$actual} to be '{$default}'.");
+		if ($actual !== $default)
+			throw new Exception("Expected default of '{$default}' to be returned for {$option}, not '{$actual}'.");
+	}
+
+	/**
+	 * @When I set the :$option configuration option to :value
+	 */
+	public function iSetTheConfigurationOptionTo($option, $value)
+	{
+		$this->sut->set($option, $value);
 	}
 
 	/**
 	 * @When I set the :option configuration option to :value
 	 */
-	public function iSetTheConfigurationOptionTo($option, $value)
+	public function iSetTheConfigurationOptionTo2($option, $value)
 	{
-		$this->config->set($option, $value); // Taylor!
+		$this->sut->set($option, $value);
+	}
+
+	private function updateConfig()
+	{
+		$config = '<?php return ' . var_export($this->config, true) . ';';
+
+		$this->filesystem = vfsStream::setup('home', null, [
+			'config.php' => $config
+		]);
 	}
 
 }

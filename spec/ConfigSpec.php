@@ -10,7 +10,7 @@ class ConfigSpec extends ObjectBehavior {
 		$this->shouldHaveType('Config');
 	}
 
-	function it_gets_and_sets_a_configuration_option()
+	function it_gets_and_sets_an_option()
 	{
 		$this->get('foo')->shouldReturn(null);
 
@@ -21,11 +21,12 @@ class ConfigSpec extends ObjectBehavior {
 
 	function it_gets_a_default_value_when_option_is_not_set()
 	{
+		$this->get('foo')->shouldReturn(null);
+
 		$this->get('foo', 'bar')->shouldReturn('bar');
 
-		$this->set('foo', 'baz');
+		$this->set('foo', 'not bar');
 
-		$this->get('foo', 'bar')->shouldReturn('baz');
+		$this->get('foo', 'bar')->shouldReturn('not bar');
 	}
-
 }
